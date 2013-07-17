@@ -89,4 +89,10 @@
 /*! use debug signals to time the software FLL circuit */
 #define DEBUG_SOFTWARE_FLL ( 1 )
 
+/*! track the processing time of important code pieces */
+#define PROFILE_PROCESSING_TIME ( 0 )
+
+/*! track which critical code was executed last */
+#define TRACK_CRITICAL_CODE ( 0 )
+
 #endif /* PRE_INCLUDE_H */

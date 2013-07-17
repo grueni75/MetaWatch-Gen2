@@ -81,11 +81,47 @@ static inline unsigned int GetTickCount(void)
 
 /******************************************************************************/
 
+#if PROFILE_PROCESSING_TIME
+
+static tProcessingTime ProcessingTimes[CODE_COUNT];
+
+void CodeStart(eCodePieces CodePiece)
+{
+  unsigned int ticks = GetTickCount();
+  unsigned int diff = ticks - ProcessingTimes[CodePiece].PrevStartTime;
+  if (diff<ProcessingTimes[CodePiece].MinCallDistance)
+    ProcessingTimes[CodePiece].MinCallDistance=diff;
+  ProcessingTimes[CodePiece].PrevStartTime=ticks;
+}
+
+void CodeEnd(eCodePieces CodePiece)
+{
+  unsigned int ticks = GetTickCount();
+  unsigned int diff = ticks - ProcessingTimes[CodePiece].PrevStartTime;
+  if (diff>ProcessingTimes[CodePiece].MaxProcessingTime)
+    ProcessingTimes[CodePiece].MaxProcessingTime=diff;
+  ProcessingTimes[CodePiece].PrevStartTime=ticks;
+}
+
+#endif
+
+/******************************************************************************/
+
 /*
  * Setup timer to generate the RTOS tick
  */
 void SetupRtosTimer(void)
 {
+#if PROFILE_PROCESSING_TIME
+  /* Init structure */
+  int i;
+  for (i=0;i<CODE_COUNT;i++) {
+    ProcessingTimes[i].PrevStartTime=0;
+    ProcessingTimes[i].MaxProcessingTime=0;
+    ProcessingTimes[i].MinCallDistance=0xFFFF;
+  }
+#endif
+
   /* Ensure the timer is stopped */
   TA0CTL = 0;
   
@@ -99,6 +135,11 @@ void SetupRtosTimer(void)
   TA0EX0 = 0x7;
   Timer0Users = 0;
   EnableRtosTick();
+
+#if PROFILE_PROCESSING_TIME
+  /* Ensure that timer is not stopped */
+  Timer0Users |= (1<<7);
+#endif
 }
 
 /* the timer is not stopped unless the rtos is off and all of the other timers
@@ -210,6 +251,9 @@ void StopCrystalTimer(unsigned char TimerId)
 #pragma vector=TIMER0_A1_VECTOR
 __interrupt void TIMER0_A1_VECTOR_ISR(void)
 {
+  LAST_CRITICAL_CODE(CC_RTOS_TIMER_ISR);
+  CODE_START(rtosTimerISR);
+
   unsigned char ExitLpm = 0;
   
   /* callback when timer expires */
@@ -225,4 +269,6 @@ __interrupt void TIMER0_A1_VECTOR_ISR(void)
   }
   
   if (ExitLpm) EXIT_LPM_ISR();
+
+  CODE_END(rtosTimerISR);
 }

@@ -197,6 +197,7 @@ static void prvCopyDataFromQueue( xQUEUE * const pxQueue, const void *pvBuffer )
 #define prvLockQueue( pxQueue )							\
 {														\
 	taskENTER_CRITICAL();								\
+	LAST_CRITICAL_CODE(CC_FREERTOS+2);\
 	{													\
 		if( pxQueue->xRxLock == queueUNLOCKED )			\
 		{												\
@@ -431,6 +432,7 @@ xTimeOutType xTimeOut;
 	for( ;; )
 	{
 		taskENTER_CRITICAL();
+		LAST_CRITICAL_CODE(CC_FREERTOS+3);
 		{
 			/* Is there room on the queue now?  To be running we must be
 			the highest priority task wanting to access the queue. */
@@ -802,6 +804,7 @@ signed char *pcOriginalReadPosition;
 	for( ;; )
 	{
 		taskENTER_CRITICAL();
+		LAST_CRITICAL_CODE(CC_FREERTOS+4);
 		{
 			/* Is there data in the queue now?  To be running we must be
 			the highest priority task wanting to access the queue. */
@@ -903,6 +906,7 @@ signed char *pcOriginalReadPosition;
 					if( pxQueue->uxQueueType == queueQUEUE_IS_MUTEX )
 					{
 						portENTER_CRITICAL();
+						LAST_CRITICAL_CODE(CC_FREERTOS+5);
 						{
 							vTaskPriorityInherit( ( void * ) pxQueue->pxMutexHolder );
 						}
@@ -992,6 +996,7 @@ unsigned portBASE_TYPE uxQueueMessagesWaiting( const xQueueHandle pxQueue )
 unsigned portBASE_TYPE uxReturn;
 
 	taskENTER_CRITICAL();
+		LAST_CRITICAL_CODE(CC_FREERTOS+6);
 		uxReturn = pxQueue->uxMessagesWaiting;
 	taskEXIT_CRITICAL();
 
@@ -1079,6 +1084,7 @@ static void prvUnlockQueue( xQueueHandle pxQueue )
 	locked items can be added or removed, but the event lists cannot be
 	updated. */
 	taskENTER_CRITICAL();
+	LAST_CRITICAL_CODE(CC_FREERTOS+7);
 	{
 		/* See if data was added to the queue while it was locked. */
 		while( pxQueue->xTxLock > queueLOCKED_UNMODIFIED )
@@ -1110,6 +1116,7 @@ static void prvUnlockQueue( xQueueHandle pxQueue )
 
 	/* Do the same for the Rx lock. */
 	taskENTER_CRITICAL();
+	LAST_CRITICAL_CODE(CC_FREERTOS+8);
 	{
 		while( pxQueue->xRxLock > queueLOCKED_UNMODIFIED )
 		{
@@ -1139,6 +1146,7 @@ static signed portBASE_TYPE prvIsQueueEmpty( const xQueueHandle pxQueue )
 signed portBASE_TYPE xReturn;
 
 	taskENTER_CRITICAL();
+		LAST_CRITICAL_CODE(CC_FREERTOS+9);
 		xReturn = ( pxQueue->uxMessagesWaiting == ( unsigned portBASE_TYPE ) 0 );
 	taskEXIT_CRITICAL();
 
@@ -1161,6 +1169,7 @@ static signed portBASE_TYPE prvIsQueueFull( const xQueueHandle pxQueue )
 signed portBASE_TYPE xReturn;
 
 	taskENTER_CRITICAL();
+		LAST_CRITICAL_CODE(CC_FREERTOS+10);
 		xReturn = ( pxQueue->uxMessagesWaiting == pxQueue->uxLength );
 	taskEXIT_CRITICAL();
 

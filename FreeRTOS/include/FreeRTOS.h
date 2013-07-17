@@ -59,6 +59,7 @@
  * Include the generic headers required for the FreeRTOS port being used.
  */
 #include <stddef.h>
+#include <DebugUART.h>
 
 /* Basic FreeRTOS definitions. */
 #include "projdefs.h"

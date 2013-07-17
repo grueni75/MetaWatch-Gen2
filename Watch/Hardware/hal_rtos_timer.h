@@ -25,6 +25,41 @@
 #ifndef HAL_RTOS_TIMER_H
 #define HAL_RTOS_TIMER_H
 
+
+/* Stores information about a piece of code */
+typedef struct
+{
+  unsigned int PrevStartTime;
+  unsigned int MinCallDistance;
+  unsigned int MaxProcessingTime;
+
+} tProcessingTime;
+
+/* Tracked pieces of code */
+typedef enum {
+  btuartISR = 0,
+  btctrlISR = 1,
+  rtcISR = 2,
+  dbguartISR = 3,
+  dmaISR = 4,
+  rtosTimerISR = 5,
+  idleTaskCriticalSection = 6
+} eCodePieces;
+
+/* Maximum number of code pieces to track */
+#define CODE_COUNT 7
+
+/* Macros for code instrumentation */
+#if PROFILE_PROCESSING_TIME
+void CodeStart(eCodePieces CodePiece);
+void CodeEnd(eCodePieces CodePiece);
+#define CODE_START(nr) CodeStart(nr);
+#define CODE_END(nr) CodeEnd(nr);
+#else
+#define CODE_START(nr)
+#define CODE_END(nr)
+#endif
+
 /*! Macro for setting the RTOS tick interrupt flag */
 #define RTOS_TICK_SET_IFG() { TA0CCTL0 |= CCIFG; }
 

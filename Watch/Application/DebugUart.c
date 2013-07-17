@@ -30,6 +30,7 @@
 #include "hal_battery.h"
 #include "hal_calibration.h"
 #include "hal_miscellaneous.h"
+#include "hal_rtos_timer.h"
 
 #include "DebugUart.h"
 #include "Statistics.h"
@@ -52,7 +53,7 @@ const char COLON = ':';
 const char DOT = '.';
 const char STAR = '*';
 
-static char Buffer[32];
+static char Buffer[64];
 static unsigned char DebugEnabled;
 static unsigned char TimeStampEnabled = pdFALSE;
 static xSemaphoreHandle UartMutex = 0;
@@ -60,6 +61,8 @@ static xSemaphoreHandle UartMutex = 0;
 static void WriteTxBuffer(const tString * pBuf);
 static void WriteTimeStamp(void);
 static void WriteTime(unsigned char Rtc, unsigned Separator);
+
+unsigned int LastCriticalCode = 0;
 
 /******************************************************************************/
 /* if interrupts are disabled then return */
@@ -204,7 +207,7 @@ void PrintF(const char *pFormat, ...)
   va_list args;
 
   va_start(args, pFormat);
-  vSprintF(Buffer, pFormat, args);
+  vsnprintf(Buffer, 64, pFormat, args);
   va_end(args);
 
   PrintS(Buffer);
@@ -243,6 +246,8 @@ __interrupt void DebugUartIsr(void)
 __interrupt void DebugUartIsr(void)
 #endif
 {
+  LAST_CRITICAL_CODE(CC_DEBUG_UART_ISR);
+  CODE_START(dbguartISR);
   unsigned char ExitLpm = 0;
   
   // Vector 2 - RXIFG; Vector 4 - TXIFG
@@ -253,4 +258,5 @@ __interrupt void DebugUartIsr(void)
   }
   
   if (ExitLpm) EXIT_LPM_ISR();
+  CODE_END(dbguartISR);
 }

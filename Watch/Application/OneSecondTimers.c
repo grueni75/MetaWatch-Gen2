@@ -74,6 +74,7 @@ static tOneSecondTimer Timer[TOTAL_TIMERS];
 void StartTimer(eTimerId Id)
 {
   portENTER_CRITICAL();
+  LAST_CRITICAL_CODE(CC_START_TIMER);
   if (!Timer[Id].MsgType)
   {
     Timer[Id].Qindex = TimerSettings[Id].Qindex;

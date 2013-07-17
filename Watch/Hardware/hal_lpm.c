@@ -44,6 +44,8 @@ void EnterLpm3(void)
 
     DEBUG1_HIGH();
 
+    CODE_END(idleTaskCriticalSection);
+
     /* leave fll control alone SCG0 (ucs7) */
     _BIS_SR(SCG1 + CPUOFF + GIE);
 

@@ -228,6 +228,7 @@ static void prvCheckPendingReadyList( void )
 
 		/* The pending ready list can be accessed by an ISR. */
 		portENTER_CRITICAL();
+		LAST_CRITICAL_CODE(CC_FREERTOS+0);
 		{	
 			pxUnblockedCRCB = ( corCRCB * ) listGET_OWNER_OF_HEAD_ENTRY( (&xPendingReadyCoRoutineList) );			
 			vListRemove( &( pxUnblockedCRCB->xEventListItem ) );
@@ -272,6 +273,7 @@ corCRCB *pxCRCB;
 			}																						
 
 			portENTER_CRITICAL();
+			LAST_CRITICAL_CODE(CC_FREERTOS+1);
 			{
 				/* The event could have occurred just before this critical
 				section.  If this is the case then the generic list item will

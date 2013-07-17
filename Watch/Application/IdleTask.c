@@ -27,6 +27,7 @@
 #include "hal_miscellaneous.h"
 #include "hal_calibration.h"
 #include "hal_boot.h"
+#include "hal_rtos_timer.h"
 
 #include "DebugUart.h"
 #include "Wrapper.h"
@@ -45,6 +46,16 @@ extern unsigned int niReset;
 
 static void PrintResetSource(unsigned int Source);
 
+/*
+static unsigned char enableTaskTrace = 0;
+static unsigned char taskTraceEnabled = 0;
+#define TASK_TRACE_BUFFER_SIZE (1024)
+static unsigned int taskTraceBufferUsedSize = 0;
+static char taskTraceBuffer[TASK_TRACE_BUFFER_SIZE];
+static unsigned char enableTaskStateListing = 0;
+static char taskStateBuffer[128];
+*/
+
 void vApplicationIdleHook(void)
 {
 
@@ -56,12 +67,28 @@ void vApplicationIdleHook(void)
   /* enter a critical section so that the flags can be checked */
   __disable_interrupt();
   __no_operation();
+  LAST_CRITICAL_CODE(CC_IDLE_TASK);
+  CODE_START(idleTaskCriticalSection);
   
   /* the watchdog is set at 16 seconds.
    * the battery interval rate is set a 10 seconds
    * each task checks in at the battery interval rate
    */
   UpdateWatchdogInfo();
+
+  /* Support tracing of tasks
+  if ((enableTaskTrace)&&(!taskTraceEnabled)) {
+    vTaskStartTrace(taskTraceBuffer,TASK_TRACE_BUFFER_SIZE);
+    taskTraceEnabled=1;
+  }
+  if ((!enableTaskTrace)&&(taskTraceEnabled)) {
+    taskTraceBufferUsedSize=ulTaskEndTrace();
+    taskTraceEnabled=0;
+  }*/
+
+  /* Store information of a task
+  if (enableTaskStateListing)
+    vTaskList(taskStateBuffer);*/
 
 #if SUPPORT_LPM
   if (WatchdogInfo.SppReadyToSleep &&
@@ -78,7 +105,14 @@ void vApplicationIdleHook(void)
   }
 #endif
 
+  /* workaround: reenable tick count if it has stopped
+  unsigned int CurrentTickCount = GetTickCount();
+  unsigned int NextTickCount = TA0CCR0;
+  if ((NextTickCount-CurrentTickCount)>1)
+    PrintS("Unexpected RTOS tick value");*/
+
   /* we aren't going to sleep so enable interrupts */
+  CODE_END(idleTaskCriticalSection);
   __enable_interrupt();
   __no_operation();
 }
@@ -118,6 +152,10 @@ void ShowWatchdogInfo(void)
 
 void ResetWatchdog(void)
 {
+  /* Turn off the watchdog timer
+  WDTCTL = WDTPW + WDTHOLD;
+  return;*/
+
   /* set watchdog for 16 second timeout
    * write password, select aclk, WDTIS_3 means divide by 512*1024 = 16 s;
    * WDTIS_2: 4 mins 
@@ -198,6 +236,7 @@ void TaskCheckIn(etTaskCheckInId TaskId)
   static unsigned char TaskCheckInFlags = 0;
 
   portENTER_CRITICAL();
+  LAST_CRITICAL_CODE(CC_TASK_CHECKIN);
   
   TaskCheckInFlags |= (1 << TaskId);
 
