@@ -76,6 +76,7 @@ task.h is included from an application file. */
 
 /*lint -e956 */
 PRIVILEGED_DATA tskTCB * volatile pxCurrentTCB = NULL;
+//static unsigned long ulCurrentPC;
 
 /* Lists for ready and blocked tasks. --------------------*/
 
@@ -403,6 +404,7 @@ tskTCB * pxNewTCB;
 		/* We are going to manipulate the task queues to add this task to a
 		ready list, so must make sure no interrupts occur. */
 		portENTER_CRITICAL();
+		LAST_CRITICAL_CODE(CC_FREERTOS+11);
 		{
 			uxCurrentNumberOfTasks++;
 			if( uxCurrentNumberOfTasks == ( unsigned portBASE_TYPE ) 1 )
@@ -496,6 +498,7 @@ tskTCB * pxNewTCB;
 	tskTCB *pxTCB;
 
 		portENTER_CRITICAL();
+		LAST_CRITICAL_CODE(CC_FREERTOS+12);
 		{
 			/* Ensure a yield is performed if the current task is being
 			deleted. */
@@ -829,6 +832,7 @@ tskTCB * pxNewTCB;
 	tskTCB *pxTCB;
 
 		portENTER_CRITICAL();
+		LAST_CRITICAL_CODE(CC_FREERTOS+13);
 		{
 			/* Ensure a yield is performed if the current task is being
 			suspended. */
@@ -911,6 +915,7 @@ tskTCB * pxNewTCB;
 		if( ( pxTCB != NULL ) && ( pxTCB != pxCurrentTCB ) )
 		{
 			portENTER_CRITICAL();
+			LAST_CRITICAL_CODE(CC_FREERTOS+14);
 			{
 				if( xTaskIsTaskSuspended( pxTCB ) == pdTRUE )
 				{
@@ -1002,6 +1007,7 @@ portBASE_TYPE xReturn;
 		STEPPING THROUGH HERE USING A DEBUGGER CAN CAUSE BIG PROBLEMS IF THE
 		DEBUGGER ALLOWS INTERRUPTS TO BE PROCESSED. */
 		__disable_interrupt();
+		LAST_CRITICAL_CODE(CC_FREERTOS+15);
     __no_operation();
 
 		xSchedulerRunning = pdTRUE;
@@ -1033,6 +1039,7 @@ void vTaskEndScheduler( void )
 	routine so the original ISRs can be restored if necessary.  The port
 	layer must ensure interrupts enable	bit is left in the correct state. */
 	__disable_interrupt();
+	LAST_CRITICAL_CODE(CC_FREERTOS+16);
   __no_operation();
   xSchedulerRunning = pdFALSE;
 	vPortEndScheduler();
@@ -1058,6 +1065,7 @@ signed portBASE_TYPE xAlreadyYielded = pdFALSE;
 	scheduler has been resumed it is safe to move all the pending ready
 	tasks from this list into their appropriate ready list. */
 	portENTER_CRITICAL();
+	LAST_CRITICAL_CODE(CC_FREERTOS+17);
 	{
 		--uxSchedulerSuspended;
 
@@ -1135,6 +1143,7 @@ portTickType xTicks;
 
 	/* Critical section required if running on a 16 bit processor. */
 	portENTER_CRITICAL();
+	LAST_CRITICAL_CODE(CC_FREERTOS+18);
 	{
 		xTicks = xTickCount;
 	}
@@ -1588,6 +1597,13 @@ void vTaskSwitchContext( void )
 	same priority get an equal share of the processor time. */
 	listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB, &( pxReadyTasksLists[ uxTopReadyPriority ] ) );
 
+	/* Get PC where thread continues
+	ulCurrentPC = *(pxCurrentTCB->pxTopOfStack + 25);
+	ulCurrentPC &= 0xF000;
+	ulCurrentPC <<= 4;
+	ulCurrentPC |= *(pxCurrentTCB->pxTopOfStack + 26);
+  */
+
 	traceTASK_SWITCHED_IN();
 	vWriteTraceToBuffer();
 }
@@ -1724,6 +1740,7 @@ portBASE_TYPE xTaskCheckForTimeOut( xTimeOutType * const pxTimeOut, portTickType
 portBASE_TYPE xReturn;
 
 	portENTER_CRITICAL();
+	LAST_CRITICAL_CODE(CC_FREERTOS+19);
 	{
 		#if ( INCLUDE_vTaskSuspend == 1 )
 			/* If INCLUDE_vTaskSuspend is set to 1 and the block time specified is
@@ -1980,6 +1997,7 @@ static void prvCheckTasksWaitingTermination( void )
 				tskTCB *pxTCB;
 
 				portENTER_CRITICAL();
+				LAST_CRITICAL_CODE(CC_FREERTOS+20);
 				{
 					pxTCB = ( tskTCB * ) listGET_OWNER_OF_HEAD_ENTRY( ( ( xList * ) &xTasksWaitingTermination ) );
 					vListRemove( &( pxTCB->xGenericListItem ) );

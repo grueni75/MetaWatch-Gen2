@@ -20,6 +20,7 @@
 */
 /******************************************************************************/
 
+#include "DebugUART.h"
 #include "portmacro.h"
 #include "hal_board_type.h"
 #include "hal_miscellaneous.h"
@@ -33,6 +34,7 @@ void EnableSmClkUser(unsigned char User)
   if (Errata())
   {
     portENTER_CRITICAL();
+    LAST_CRITICAL_CODE(CC_ENABLE_SM_CLK_USER);
     
 #if CLOCK_CONTROL_DEBUG
     DEBUG5_HIGH();
@@ -52,6 +54,7 @@ void DisableSmClkUser(unsigned char User)
   if (Errata())
   {
     portENTER_CRITICAL();
+    LAST_CRITICAL_CODE(CC_DISABLE_SM_CLK_USER);
     
     SmClkRequests &= ~User;
       

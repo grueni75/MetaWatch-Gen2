@@ -27,6 +27,35 @@
 #ifndef DEBUG_UART_H
 #define DEBUG_UART_H
 
+// Critical code identification numbers
+#if TRACK_CRITICAL_CODE
+#define CC_IDLE_TASK 1
+#define CC_BUTTON_PORT_ISR 2
+#define CC_DEBUG_UART_ISR 3
+#define CC_TASK_CHECKIN 4
+#define CC_START_TIMER 5
+#define CC_DMA_ISR 6
+#define CC_CTS_ISR 7
+#define CC_ACCELEROMETER 8
+#define CC_ACCELEROMETER_ISR 9
+#define CC_ENABLE_SM_CLK_USER 10
+#define CC_DISABLE_SM_CLK_USER 11
+#define CC_ENABLE_RTC 12
+#define CC_DISABLE_RTC 13
+#define CC_RTC_ISR 14
+#define CC_ADD_USER 15
+#define CC_REMOVE_USER 16
+#define CC_RTOS_TIMER_ISR 17
+#define CC_SOFTWARE_FLL_ISR1 18
+#define CC_SOFTWARE_FLL_ISR2 19
+// Must be the last one
+#define CC_FREERTOS 20
+extern unsigned int LastCriticalCode;
+#define LAST_CRITICAL_CODE(nr) { LastCriticalCode =nr; }
+#else
+#define LAST_CRITICAL_CODE(nr)
+#endif
+
 extern const char OK[];
 extern const char NOK[];
 extern const char SPACE;

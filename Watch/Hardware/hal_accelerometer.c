@@ -142,6 +142,7 @@ static void AccelerometerReadSingle(unsigned char Addr, unsigned char *pData)
      * this requires 62 us @ 320 kHz, 51 @ 400 kHz
      */
     portENTER_CRITICAL();
+    LAST_CRITICAL_CODE(CC_ACCELEROMETER);
   
     ACCELEROMETER_CTL1 |= UCTXSTT;
   
@@ -190,6 +191,7 @@ void AccelerometerRead(unsigned char Addr, unsigned char *pData, unsigned char L
 #pragma vector = USCI_ACCELEROMETER_VECTOR
 __interrupt void ACCERLEROMETER_ISR(void)
 {
+  LAST_CRITICAL_CODE(CC_ACCELEROMETER_ISR);
   switch(__even_in_range(USCI_ACCELEROMETER_IV,12))
   {
   case ACCELEROMETER_NO_INTERRUPTS: 

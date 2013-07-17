@@ -26,6 +26,7 @@
 #include "hal_rtc.h"
 #include "hal_lpm.h"
 #include "hal_calibration.h"
+#include "hal_rtos_timer.h"
 
 #include "DebugUart.h"
 #include "Utilities.h"
@@ -118,7 +119,7 @@ void InitRealTimeClock(void)
   RestoreRtc();
 
   // Enable the RTC
-  RTCCTL01 &= ~RTCHOLD;  
+  RTCCTL01 &= ~RTCHOLD;
 }
 
 void SetRtc(Rtc_t *pRtcData)
@@ -237,6 +238,7 @@ void BackupRtc(void)
 void EnableRtcPrescaleInterruptUser(unsigned char UserMask)
 {
   portENTER_CRITICAL();
+  LAST_CRITICAL_CODE(CC_ENABLE_RTC);
    
   // If not currently enabled, enable the timer ISR
 //  if((RtcInUseMask & RTC_USER_MASK) == 0)
@@ -253,6 +255,7 @@ void DisableRtcPrescaleInterruptUser(unsigned char UserMask)
 {
 
   portENTER_CRITICAL();
+  LAST_CRITICAL_CODE(CC_DISABLE_RTC);
   
   RtcInUseMask &= ~UserMask;
       
@@ -279,9 +282,12 @@ static unsigned char DivideByFour = 0;
 #pragma vector = RTC_VECTOR
 __interrupt void RTC_ISR(void)
 {
+  LAST_CRITICAL_CODE(CC_RTC_ISR);
+  CODE_START(rtcISR);
+
   unsigned char ExitLpm = 0;
   tMessage Msg;
-        
+
   // compiler intrinsic, value must be even, and in the range of 0 to 10
   switch(__even_in_range(RTCIV,10))
   {
@@ -326,4 +332,6 @@ __interrupt void RTC_ISR(void)
   }
 
   if (ExitLpm) EXIT_LPM_ISR();
+
+  CODE_END(rtcISR);
 }

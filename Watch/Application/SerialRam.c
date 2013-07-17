@@ -30,6 +30,7 @@
 #include "hal_miscellaneous.h"
 #include "hal_battery.h"
 #include "hal_lcd.h"
+#include "hal_rtos_timer.h"
 #include "Messages.h"
 #include "MessageQueues.h"
 #include "DebugUart.h"
@@ -1096,6 +1097,9 @@ void SerialRamInit(void)
 #pragma vector=DMA_VECTOR
 __interrupt void DMA_ISR(void)
 {
+  LAST_CRITICAL_CODE(CC_DMA_ISR);
+  CODE_START(dmaISR);
+
   /* 0 is no interrupt and remainder are channels 0-7 */
   switch(__even_in_range(DMAIV,16))
   {
@@ -1105,4 +1109,6 @@ __interrupt void DMA_ISR(void)
   case 6: LcdDmaIsr(); break;
   default: break;
   }
+
+  CODE_END(dmaISR);
 }

@@ -32,6 +32,7 @@
  */
 /******************************************************************************/
 
+#include "DebugUART.h"
 #include "hal_board_type.h"
 #include "Statistics.h"
 #include "hal_clock_control.h"
@@ -144,6 +145,7 @@ __interrupt void TIMER0_B0_VECTOR_ISR(void)
 __interrupt void TIMER0_B0_VECTOR_ISR(void)
 #endif
 {
+  LAST_CRITICAL_CODE(CC_SOFTWARE_FLL_ISR1);
   __no_operation();  
 }
 
@@ -158,6 +160,7 @@ __interrupt void TIMER0_B1_VECTOR_ISR(void)
 __interrupt void TIMER0_B1_VECTOR_ISR(void)
 #endif
 {
+  LAST_CRITICAL_CODE(CC_SOFTWARE_FLL_ISR2);
   switch(__even_in_range(TB0IV,14))
   {
   case 0: break;  // No interrupt

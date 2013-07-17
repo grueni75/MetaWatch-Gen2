@@ -588,6 +588,7 @@ interrupt is generated.
 
 __interrupt void ButtonPortIsr(void)
 {
+  LAST_CRITICAL_CODE(CC_BUTTON_PORT_ISR);
   unsigned char ButtonInterruptFlags = BUTTON_PORT_IFG;
   unsigned char StartDebouncing = 0;
     
