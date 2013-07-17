@@ -67,6 +67,8 @@ static unsigned char RtcUpdateEnabled = pdFALSE;
 unsigned char CurrentMode = IDLE_MODE;
 unsigned char PageType = PAGE_TYPE_IDLE;
 
+static unsigned char DisplayLEDState = 0;
+
 static eIdleModePage CurrentPage[PAGE_TYPE_NUM];
 
 static const tSetVibrateModePayload RingTone = {1, 0x00, 0x01, 0x00, 0x01, 2};
@@ -112,7 +114,7 @@ static void EraseTemplateHandler(tMessage *pMsg);
 /******************************************************************************/
 
 #define DISPLAY_TASK_QUEUE_LENGTH 30
-#define DISPLAY_TASK_STACK_SIZE  	(configMINIMAL_STACK_SIZE + 100) //total 48-88
+#define DISPLAY_TASK_STACK_SIZE  	(configMINIMAL_STACK_SIZE + 200) //total 48-88
 #define DISPLAY_TASK_PRIORITY     (tskIDLE_PRIORITY + 1)
 
 void CreateDisplayTask(void)
@@ -120,7 +122,10 @@ void CreateDisplayTask(void)
   QueueHandles[DISPLAY_QINDEX] =
     xQueueCreate(DISPLAY_TASK_QUEUE_LENGTH, MESSAGE_QUEUE_ITEM_SIZE);
 
-  if (QueueHandles[DISPLAY_QINDEX] == 0) SoftwareReset();
+  if (QueueHandles[DISPLAY_QINDEX] == 0) {
+    PrintS("Display queue creation failed");
+    SoftwareReset();
+  }
 
   // task function, task name, stack len, task params, priority, task handle
   xTaskCreate(DisplayTask, "DISPLAY", DISPLAY_TASK_STACK_SIZE, NULL, DISPLAY_TASK_PRIORITY, &DisplayHandle);
@@ -457,6 +462,12 @@ static void DisplayQueueMessageHandler(tMessage* pMsg)
     break;
 
   case RateTestMsg:
+    if (DisplayLEDState) {
+      DISABLE_LCD_LED();
+    } else {
+      ENABLE_LCD_LED();
+    }
+    DisplayLEDState=1-DisplayLEDState;
     SetupMessageWithBuffer(&Msg, DiagnosticLoopback, MSG_OPT_NONE);
     if (Msg.pBuffer != NULL)
     {
@@ -906,6 +917,7 @@ static void ReadBatteryVoltageHandler(void)
 static void SoftwareResetHandler(tMessage* pMsg)
 {
   if (pMsg->Options == MASTER_RESET_OPTION) SetMasterReset();
+  PrintS("Software reset requested");
   SoftwareReset();
 }
 
@@ -1001,6 +1013,7 @@ void EnterBootloader(void)
   /* disable RAM alternate interrupt vectors */
   SYSCTL &= ~SYSRIVECT;
   SetBootloaderSignature();
+  PrintS("Enter boot loader requested");
   SoftwareReset();
 }
 
