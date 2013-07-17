@@ -72,5 +72,14 @@ void DisableRtosTick(void);
 /*! \return 0 if Tick is Disabled , 1 if RTOS tick is enabled */
 unsigned char QuerySchedulerState(void);
 
+void StartCrystalTimer(unsigned char TimerId,
+                       unsigned char (*pCallback) (void),
+                       unsigned int Ticks);
+
+void RearmCrystalTimer(unsigned char TimerId,
+                       unsigned int Ticks);
+
+void StopCrystalTimer(unsigned char TimerId);
+
 #endif // HAL_RTOS_TIMER_H
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>MetaWatch</name>
+	<name>MetaWatchWithBTStack</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -105,6 +105,11 @@
 			<name>Patch</name>
 			<type>2</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Patch</locationURI>
+		</link>
+		<link>
+			<name>Stack</name>
+			<type>2</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Stack</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

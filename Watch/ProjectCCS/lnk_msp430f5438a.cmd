@@ -144,7 +144,7 @@ MEMORY
 SECTIONS
 {
     .bss       : {} > RAM                /* GLOBAL AND STATIC VARS            */
-//  .sysmem    : {} > RAM                /* DYNAMIC MEMORY ALLOCATION AREA    */
+    .sysmem    : {} > RAM                /* DYNAMIC MEMORY ALLOCATION AREA    */
     .stack     : {} > RAM (HIGH)         /* SOFTWARE SYSTEM STACK             */
     .usect     : run = NO_INIT_RAM, type = NOLOAD /* _no_init VARS            */
     .text      : {}>> FLASH | FLASH2     /* CODE                              */

@@ -41,6 +41,8 @@ static unsigned char (*pCrystalCallback4)(void);
 
 static unsigned char Timer0Users;
 
+static unsigned char TimerInterruptActive=0;
+
 #define TIMER0_RTOS_USER ( 0 )
 #define TIMER0_USER1     ( 1 )
 #define TIMER0_USER2     ( 2 )
@@ -159,8 +161,14 @@ void DisableRtosTick(void)
 
 static void AddUser(unsigned char User,unsigned int CrystalTicks)
 {
-  portENTER_CRITICAL();
-  
+  // Only use portENTER_CRITICAL() when not called from ISR
+  // Otherwise, interrupts get enabled and the time counting can get stuck
+  if (!TimerInterruptActive) {
+    portENTER_CRITICAL();
+    LAST_CRITICAL_CODE(CC_ADD_USER);
+  }
+
+
   /* minimum value of 1 tick */
   if ( CrystalTicks < 1 ) CrystalTicks = 1;
   
@@ -183,12 +191,20 @@ static void AddUser(unsigned char User,unsigned int CrystalTicks)
   /* keep track of users */
   Timer0Users |= (1 << User);
   
-  portEXIT_CRITICAL();
+  // Only use portEXIT_CRITICAL() when not called from ISR
+  // Otherwise, interrupts get enabled and the time counting can get stuck
+  if (!TimerInterruptActive)
+    portEXIT_CRITICAL();
 }
 
 static void RemoveUser(unsigned char User)
 {
-  portENTER_CRITICAL();
+  // Only use portENTER_CRITICAL() when not called from ISR
+  // Otherwise, interrupts get enabled
+  if (!TimerInterruptActive) {
+    portENTER_CRITICAL();
+    LAST_CRITICAL_CODE(CC_REMOVE_USER);
+  }
 
   switch (User)
   {
@@ -205,8 +221,11 @@ static void RemoveUser(unsigned char User)
     
   /* disable timer if no one is using it */
   if (Timer0Users == 0) TA0CTL = 0;
-  
-  portEXIT_CRITICAL();
+ 
+  // Only use portENTER_CRITICAL() when not called from ISR
+  // Otherwise, interrupts get enabled
+  if (!TimerInterruptActive)
+    portEXIT_CRITICAL();
 }
 
 
@@ -235,6 +254,12 @@ void StartCrystalTimer(unsigned char TimerId,
   AddUser(TimerId,Ticks);
 }
 
+void RearmCrystalTimer(unsigned char TimerId,
+                       unsigned int Ticks)
+{
+  AddUser(TimerId,Ticks);
+}
+
 void StopCrystalTimer(unsigned char TimerId)
 {
   RemoveUser(TimerId);  
@@ -257,6 +282,7 @@ __interrupt void TIMER0_A1_VECTOR_ISR(void)
   unsigned char ExitLpm = 0;
   
   /* callback when timer expires */
+  TimerInterruptActive=1;
   switch (__even_in_range(TA0IV,8))
   {
   /* remove the user first in case the callback is re-enabling this user */
@@ -267,6 +293,7 @@ __interrupt void TIMER0_A1_VECTOR_ISR(void)
   case 8: RemoveUser(4); ExitLpm = pCrystalCallback4(); break;
   default: break;
   }
+  TimerInterruptActive=0;
   
   if (ExitLpm) EXIT_LPM_ISR();
 
