@@ -165,6 +165,13 @@ SECTIONS
     .infoC     : {} > INFOC
     .infoD     : {} > INFOD
      
+    // Ensure that the lock/unlock functions are in RAM
+    // This is required to override them
+    .text:_lock : {} > RAM
+    .text:_unlock : {} > RAM
+    .text:__lock : {} > RAM
+    .text:__unlock : {} > RAM
+
 //     .NV_ADDRESS_SPACE : load = 0xF200   /* place in the same location as IAR */
 
     .int00   : {} > INT00                /* MSP430 INTERRUPT VECTORS          */
