@@ -95,4 +95,7 @@
 /*! track which critical code was executed last */
 #define TRACK_CRITICAL_CODE ( 0 )
 
+/* Language for DayOfWeek, 0: English; 1: Finnish; 2: German */
+#define CURRENT_LANG  (0)
+
 #endif /* PRE_INCLUDE_H */
