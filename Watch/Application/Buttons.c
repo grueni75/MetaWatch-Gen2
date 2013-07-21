@@ -104,7 +104,7 @@ typedef  struct
 
 #ifdef DIGITAL
 
-#define CONN_PAGE_ACT_NUM      (20) // 3rd party needs 16
+#define CONN_PAGE_ACT_NUM      (32) // 3rd party needs 16
 
 static const tButtonAction DisconnAction[] =
 {
@@ -367,7 +367,9 @@ static void HandleButtonEvent(unsigned char Index, unsigned char Event)
 {
   tMessage Msg;
 
-//  PrintS(tringAndTwoDecimals("- BtnEvt i:", Index, "e:", Event);
+  //PrintF("Index=%d Event=%d",Index,Event);
+
+  //  PrintS(tringAndTwoDecimals("- BtnEvt i:", Index, "e:", Event);
 //  PrintS(tringAndHexByte("LstBF:0x", LastButton);
 
   unsigned char Done = pdFALSE;
@@ -476,6 +478,7 @@ static void HandleButtonEvent(unsigned char Index, unsigned char Event)
       Msg.pBuffer[2] = Event;
       Msg.pBuffer[3] = pAction[i].MsgType;
       Msg.pBuffer[4] = pAction[i].MsgOpt;
+      //PrintF("Contents: ButtonIndex=%d ButtonMode=%d Event=%d MsgType=%d MsgOpt=%d",Msg.pBuffer[0],Msg.pBuffer[1],Msg.pBuffer[2],Msg.pBuffer[3],Msg.pBuffer[4]);
       Msg.Length = 5;
       RouteMsg(&Msg);
     }
@@ -509,6 +512,8 @@ void EnableButtonMsgHandler(tMessage* pMsg)
                           pAction->ButtonIndex << BTN_NO_SHFT |
                           pAction->ButtonEvent;
   
+  //PrintF("DisplayMode=%d ButtonIndex=%d ButtonEvent=%d",pAction->DisplayMode,pAction->ButtonIndex,pAction->ButtonEvent);
+
   unsigned char i, k = CONN_PAGE_ACT_NUM;
   
   for (i = 0; i < CONN_PAGE_ACT_NUM; ++i)
@@ -524,6 +529,7 @@ void EnableButtonMsgHandler(tMessage* pMsg)
     ButtonAction[i].Info = BtnInfo;
     ButtonAction[i].MsgType = pAction->CallbackMsgType;
     ButtonAction[i].MsgOpt = pAction->CallbackMsgOptions;
+    //PrintF("i=%d MsgType=%d MsgOpt=%d",i,pAction->CallbackMsgType,pAction->CallbackMsgOptions);
   }
   else PrintS("# DefBtn");
 }
