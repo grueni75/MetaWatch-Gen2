@@ -154,6 +154,20 @@ void SetRtc(Rtc_t *pRtcData)
   EnableTimeStamp();
 }
 
+void GetRtc(Rtc_t* pRtcData)
+{
+  tWordByteUnion temp;
+  temp.word = RTCYEAR;
+  pRtcData->YearLsb = temp.Bytes.byte0;
+  pRtcData->YearMsb = temp.Bytes.byte1;
+  pRtcData->Month = RTCMON;
+  pRtcData->Day = RTCDAY;
+  pRtcData->DayOfWeek = RTCDOW;
+  pRtcData->Hour = RTCHOUR;
+  pRtcData->Minute = RTCMIN;
+  pRtcData->Second = RTCSEC;
+}
+
 static void RestoreRtc(void)
 {
   CheckResetCode();
