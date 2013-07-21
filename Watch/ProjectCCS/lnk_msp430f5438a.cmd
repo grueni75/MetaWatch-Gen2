@@ -37,6 +37,8 @@
 #define RTC_SEC_ADDR            0x1C35;
 #define RTC_LANG_ADDR		0x1C36;
 
+#define DB_MEM_DEVICE_LINK_KEY_STORAGE_ADDR 0x1c40;
+
 /****************************************************************************/
 
 Signature = 0x5B80;
@@ -59,13 +61,15 @@ niRtcMin = 0x1C34;
 niRtcSec = 0x1C35;
 niLang = 0x1C36;
 
+niDBMemDeviceLinkKeyStorage = 0x1c40;
+
 MEMORY
 {
     SFR                     : origin = 0x0000, length = 0x0010
     PERIPHERALS_8BIT        : origin = 0x0010, length = 0x00F0
     PERIPHERALS_16BIT       : origin = 0x0100, length = 0x0100
-    NO_INIT_RAM             : origin = 0x1C00, length = 0x0040
-    RAM                     : origin = 0x1C40, length = 0x3FC0
+    NO_INIT_RAM             : origin = 0x1C00, length = 0x0090
+    RAM                     : origin = 0x1C90, length = 0x3F70
     INFOA                   : origin = 0x1980, length = 0x0080
     INFOB                   : origin = 0x1900, length = 0x0080
     INFOC                   : origin = 0x1880, length = 0x0080

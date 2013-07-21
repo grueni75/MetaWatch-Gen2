@@ -97,6 +97,7 @@ static uint8_t Discoverable=0;
 static uint8_t OnceConnectedInt=0;
 static uint8_t StackInitialized=0;
 uint8_t ReadyToSleep=1;
+char BDAddr[15] = { 0 };
 
 //static uint32_t last_reset=0;
 
@@ -126,6 +127,7 @@ void SetDiscoverability(unsigned char Value) {
 void BluetoothPower(unsigned char power) {
   if (!StackInitialized) {
     btstack_init();
+    ClearResetCode();
     StackInitialized=1;
   }
   if (power) {
@@ -153,7 +155,7 @@ static unsigned char SPPMessageHandler(tMessage* pMsg)
       } else {
         ENABLE_LCD_LED();
       }
-      if (t>4*120) {
+      if (t>4*30) {
         btstack_error_handler();
         last_reset=embedded_get_ticks();
       }*/
@@ -359,7 +361,7 @@ unsigned char ValidAuthInfo(void)
 
 void GetBDAddrStr(char *pAddr)
 {
-  strcpy(pAddr,"0000-0000-0000"); // not yet adapted
+  strcpy(pAddr,BDAddr);
 }
 
 /*! If a function wishes to disable the flow of characters from the radio

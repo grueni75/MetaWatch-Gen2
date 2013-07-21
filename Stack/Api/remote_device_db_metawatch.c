@@ -40,17 +40,71 @@
 #include "remote_device_db.h"
 #include "btstack_memory.h"
 #include "debug.h"
+#include "hal_boot.h"
 
 #include <btstack/utils.h>
 #include <btstack/linked_list.h>
+#include <btstack/memory_pool.h>
+
+// Number of link keys to store
+#define MW_MAX_NO_DB_MEM_DEVICE_LINK_KEYS 3
 
 // This lists should be only accessed by tests.
 linked_list_t db_mem_link_keys = NULL;
 linked_list_t db_mem_names = NULL;
-static linked_list_t db_mem_services = NULL;
+//static linked_list_t db_mem_services = NULL;
+
+// Memory that survives reset
+#if __IAR_SYSTEMS_ICC__
+__no_init __root db_mem_device_link_key_t niDBMemDeviceLinkKeyStorage[MW_MAX_NO_DB_MEM_DEVICE_LINK_KEYS] @DB_MEM_DEVICE_LINK_KEY_STORAGE_ADDR;
+#else
+extern db_mem_device_link_key_t niDBMemDeviceLinkKeyStorage[MW_MAX_NO_DB_MEM_DEVICE_LINK_KEYS];
+#endif
+static memory_pool_t db_mem_device_link_key_pool = NULL;
+
+// Functions to access the memory
+static void * memory_db_mem_device_link_key_get(void){
+    return memory_pool_get(&db_mem_device_link_key_pool);
+}
+static void memory_db_mem_device_link_key_free(void *db_mem_device_link_key){
+    memset(db_mem_device_link_key,0,sizeof(db_mem_device_link_key_t));
+    memory_pool_free(&db_mem_device_link_key_pool, db_mem_device_link_key);
+}
+
+// Reset code
+extern unsigned int niReset;
 
 // Device info
 static void db_open(void){
+  uint8_t i,j;
+  CheckResetCode();
+  if (niReset == NORMAL_RESET_CODE)
+  {
+    // Create the linked list from the existing entries
+    //PrintS("BTS: warm reset -- checking for existing link keys");
+    for (i=0;i<MW_MAX_NO_DB_MEM_DEVICE_LINK_KEYS;i++) {
+      uint8_t valid = 0;
+      for (j=0;j<BD_ADDR_LEN;j++) {
+        if (niDBMemDeviceLinkKeyStorage[i].device.bd_addr[j]!=0) {
+          valid = 1;
+          break;
+        }
+      }
+      if (valid) {
+        //PrintS("BTS: adding valid link key to list");
+        linked_list_add(&db_mem_link_keys, (linked_item_t *) &niDBMemDeviceLinkKeyStorage[i]);
+      } else {
+        //PrintS("BTS: adding invalid link key to memory pool");
+        memory_pool_free(&db_mem_device_link_key_pool, &niDBMemDeviceLinkKeyStorage[i]);
+      }
+    }
+  }
+  else
+  {
+    //PrintS("BTS: cold reset -- clearing link keys");
+    memset(niDBMemDeviceLinkKeyStorage,0,MW_MAX_NO_DB_MEM_DEVICE_LINK_KEYS*sizeof(db_mem_device_link_key_t));
+    memory_pool_create(&db_mem_device_link_key_pool, niDBMemDeviceLinkKeyStorage, MW_MAX_NO_DB_MEM_DEVICE_LINK_KEYS, sizeof(db_mem_device_link_key_t));
+  }
 }
 
 static void db_close(void){ 
@@ -99,7 +153,7 @@ static void delete_link_key(bd_addr_t *bd_addr){
     if (!item) return;
     
     linked_list_remove(&db_mem_link_keys, (linked_item_t *) item);
-    btstack_memory_db_mem_device_link_key_free(item);
+    memory_db_mem_device_link_key_free(item);
 }
 
 
@@ -112,7 +166,7 @@ static void put_link_key(bd_addr_t *bd_addr, link_key_t *link_key){
     }
     
     // Record not found, create new one for this device
-    db_mem_device_link_key_t * newItem = (db_mem_device_link_key_t*) btstack_memory_db_mem_device_link_key_get();
+    db_mem_device_link_key_t * newItem = (db_mem_device_link_key_t*) memory_db_mem_device_link_key_get();
     if (!newItem){
         newItem = (db_mem_device_link_key_t*)linked_list_get_last_item(&db_mem_link_keys);
     }
@@ -158,6 +212,10 @@ static void put_name(bd_addr_t *bd_addr, device_name_t *device_name){
 // MARK: PERSISTENT RFCOMM CHANNEL ALLOCATION
 
 static uint8_t persistent_rfcomm_channel(char *serviceName){
+    PrintS("BTSERR: persistent_rfcomm_channel not implemented");
+    btstack_error_handler();
+    return 0;
+/*
     linked_item_t *it;
     db_mem_service_t * item;
     uint8_t max_channel = 1;
@@ -182,6 +240,7 @@ static uint8_t persistent_rfcomm_channel(char *serviceName){
     newItem->channel = max_channel;
     linked_list_add(&db_mem_services, (linked_item_t *) newItem);
     return max_channel;
+*/
 }
 
 const remote_device_db_t remote_device_db_metawatch = {

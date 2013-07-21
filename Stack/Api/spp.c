@@ -107,6 +107,7 @@ static timer_source_t       sniff_timer;
 static enum STATE           state = INIT;
 
 // Variables and functions used from Wrapper.c
+extern char BDAddr[];
 void SetDiscoverability(unsigned char Value);
 void BluetoothStateChanged(eBluetoothState BS);
 
@@ -310,6 +311,7 @@ static void packet_handler(void * connection, uint8_t packet_type, uint16_t chan
   uint8_t status;
   uint16_t pos;
   uint16_t interval;
+  uint16_t t;
   tMessage OutgoingMsg;
 
   // Handle data packets
@@ -410,10 +412,6 @@ static void packet_handler(void * connection, uint8_t packet_type, uint16_t chan
           // bt stack activated, get started - set local name
           if (packet[2] == HCI_STATE_WORKING) {
             hci_send_cmd(&hci_write_local_name, "MetaWatch (BTStack)");
-            btstack_enable_dump_mode=0;
-            state=W4_CONNECTION;
-            BluetoothStateChanged(On);
-            PrintS("BTS: stack is powered on");
           }
           if (packet[2] == HCI_STATE_OFF) {
             hal_uart_dma_deinit();
@@ -424,6 +422,23 @@ static void packet_handler(void * connection, uint8_t packet_type, uint16_t chan
               SetupMessage(&OutgoingMsg, TurnRadioOnMsg, MSG_OPT_NONE);
               RouteMsg(&OutgoingMsg);
             }
+          }
+          break;
+        case HCI_EVENT_COMMAND_COMPLETE:
+          if (COMMAND_COMPLETE_EVENT(packet, hci_read_bd_addr)) {
+            BDAddr[0]=0;
+            for (pos=OFFSET_OF_DATA_IN_COMMAND_COMPLETE+5;pos>=OFFSET_OF_DATA_IN_COMMAND_COMPLETE+1;pos-=2) {
+              t=READ_BT_16(packet,pos);
+              if (BDAddr[0]==0)
+                snprintf(BDAddr,15,"  %04x",t);
+              else
+                snprintf(BDAddr,15,"%s%04x",BDAddr,t);
+            }
+          }
+          if (COMMAND_COMPLETE_EVENT(packet, hci_write_local_name)) {
+            BluetoothStateChanged(On);
+            PrintS("BTS: stack is powered on");
+            state=W4_CONNECTION;
           }
           break;
         default:
