@@ -178,11 +178,15 @@ static unsigned char SPPMessageHandler(tMessage* pMsg)
       //PrintS("BTS: turn radio off end");
       break;
 
+    case SniffControlMsg:
+      PrintS("BTS: ignored");
+      // SNIFF control messages are ignored because SNIFF is anyway controlled depending on available messages
+      break;
+
     case ShippingModeMsg:
     case ReadRssiMsg:
     case ReadRssiResponseMsg:
     case PairingControlMsg:
-    case SniffControlMsg:
     case CallerIdIndMsg:
     case MapMsg:
     case MapIndMsg:

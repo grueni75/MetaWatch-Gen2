@@ -539,7 +539,7 @@ static void packet_handler(void * connection, uint8_t packet_type, uint16_t chan
           break;
         case RFCOMM_EVENT_CHANNEL_CLOSED:
           state = W4_CONNECTION;
-          BluetoothStateChanged(On);
+          BluetoothStateChanged(Disconnect);
           SetupMessage(&OutgoingMsg, LinkAlarmMsg, MSG_OPT_NONE);
           RouteMsg(&OutgoingMsg);
           PrintS("BTS: RFCOMM channel closed");

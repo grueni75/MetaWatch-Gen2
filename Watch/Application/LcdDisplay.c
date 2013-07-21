@@ -903,6 +903,7 @@ unsigned char LcdRtcUpdateHandlerIsr(void)
 
 static void UpdateClock(void)
 {
+  if (Splashing) return; // do not show clock on splash screen
   if (CurrentMode == IDLE_MODE && PageType == PAGE_TYPE_IDLE)
   {
     if (CurrentPage[PageType] == InitPage) DrawDateTime();
