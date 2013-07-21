@@ -99,6 +99,13 @@ void InitRealTimeClock(void);
  */
 void SetRtc(Rtc_t *pRtcData);
 
+/*! Get the current structure containing the real time clock parameters.
+ *
+ * \param pRtcData
+ *
+ */
+void GetRtc(Rtc_t* pRtcData);
+
 void BackupRtc(void);
 
 void IncRtc(unsigned char Index);

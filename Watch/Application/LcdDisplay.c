@@ -365,6 +365,13 @@ static void DisplayQueueMessageHandler(tMessage* pMsg)
     UpdateClock();
     break;
     
+  case GetRtcMsg:
+    SetupMessageWithBuffer(&Msg, RtcRespMsg, MSG_OPT_NONE);
+    GetRtc((Rtc_t*)Msg.pBuffer);
+    Msg.Length = sizeof(Rtc_t);
+    RouteMsg(&Msg);
+    break;
+
 #if COUNTDOWN_TIMER
   case CountDownMsg:
     if (pMsg->Options == MSG_OPT_NONE)
