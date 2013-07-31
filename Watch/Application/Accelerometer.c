@@ -209,7 +209,13 @@ void HandleAccelerometer(tMessage *pMsg)
 
   case MSG_OPT_ACCEL_DISABLE:
     DisableAccelerometer();
-    CreateAndSendMessage(UpdConnParamMsg, LongInterval);
+
+    if (Connected(CONN_TYPE_BLE))
+      CreateAndSendMessage(UpdConnParamMsg, LongInterval);
+
+    else if (Connected(CONN_TYPE_SPP))
+      CreateAndSendMessage(SniffControlMsg, MSG_OPT_ENTER_SNIFF);
+
     break;
 
   case MSG_OPT_ACCEL_STREAMING:
