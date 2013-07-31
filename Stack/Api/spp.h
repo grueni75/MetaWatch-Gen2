@@ -41,6 +41,9 @@
 */
 /******************************************************************************/
 
+// Controls if sniff mode is used
+extern btstack_set_sniff_mode(unsigned char enable);
+
 // Initializes the bluetooth stack
 extern void btstack_init();
 

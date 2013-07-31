@@ -96,6 +96,7 @@ static eBluetoothState BluetoothStateInt = Unknown;
 static uint8_t Discoverable=0;
 static uint8_t OnceConnectedInt=0;
 static uint8_t StackInitialized=0;
+
 uint8_t ReadyToSleep=1;
 char BDAddr[15] = { 0 };
 
@@ -188,8 +189,14 @@ static unsigned char SPPMessageHandler(tMessage* pMsg)
       break;
 
     case SniffControlMsg:
-      PrintS("BTS: ignored");
-      // SNIFF control messages are ignored because SNIFF is anyway controlled depending on available messages
+      switch(pMsg->Options) {
+        case MSG_OPT_EXIT_SNIFF:
+          btstack_set_sniff_mode(0); // first transmission exits sniff anyway, so no need to do it here
+          break;
+        default:
+          btstack_set_sniff_mode(1);
+          break;
+      }
       break;
 
     case ShippingModeMsg:

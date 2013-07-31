@@ -104,6 +104,7 @@ static const uint16_t       sniff_return_timeout = 3000; // time unit: ms
 static const uint16_t       sniff_attempt = 10;
 static const uint16_t       sniff_timeout = 10;
 static timer_source_t       sniff_timer;
+static uint8_t              sniff_enabled = 1;
 static enum STATE           state = INIT;
 
 // Variables and functions used from Wrapper.c
@@ -182,7 +183,7 @@ static void transit_to_active_mode()
 // Sets sniff mode
 static void transit_to_sniff_mode(struct timer *t)
 {
-  if (state!=W4_ACTIVE) return;
+  if ((state!=W4_ACTIVE)||(!sniff_enabled)) return;
   if (rfcomm_connection_mode == ACTIVE) {
     if (hci_can_send_packet_now(HCI_COMMAND_DATA_PACKET)) {
       //PrintS("BTS: entering sniff mode");
@@ -559,6 +560,16 @@ static void packet_handler(void * connection, uint8_t packet_type, uint16_t chan
 
     default:
       break;
+  }
+}
+
+// Enables or disables sniff mode
+void btstack_set_sniff_mode(unsigned char enable) {
+  if (enable) {
+    sniff_enabled=1;
+    transit_to_sniff_mode(NULL);
+  } else {
+    sniff_enabled=0;
   }
 }
 
