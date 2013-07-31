@@ -51,6 +51,7 @@
 #include "ClockWidget.h"
 #include "Fonts.h"
 #include "LcdBuffer.h"
+#include "DebugUart.h"
 
 #if COUNTDOWN_TIMER
 #include "Countdown.h"
@@ -195,7 +196,12 @@ void Init(void)
   InitBufferPool(); // message queue
 
   InitBattery();
+  SerialRamPreInit();
   CheckClip();
+#if LOG_TO_SERIAL_RAM
+  if (GetBoardConfiguration()>=DIGITAL_WATCH_TYPE_G1)
+    EnableDebugUart(1);
+#endif
 
   PrintF("*** %s:%s ***", niReset == FLASH_RESET_CODE ? "FLASH" :
     (niReset == MASTER_RESET_CODE ? "MASTER" : "NORMAL"), niBuild);
@@ -234,7 +240,13 @@ static void DisplayQueueMessageHandler(tMessage* pMsg)
   case SetWidgetListMsg:
     SetWidgetList(pMsg);
     break;
-  
+
+#if LOG_TO_SERIAL_RAM
+  case ReadLogMsg:
+    ReadLogHandler(pMsg);
+    break;
+#endif
+
   case UpdateDisplayMsg:
     if ((!(pMsg->Options & MSG_OPT_UPD_INTERNAL) &&
           (pMsg->Options & MODE_MASK) == NOTIF_MODE) &&

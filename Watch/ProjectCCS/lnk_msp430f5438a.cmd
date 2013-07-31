@@ -37,9 +37,15 @@
 #define RTC_SEC_ADDR            0x1C35;
 #define RTC_LANG_ADDR		0x1C36;
 
+#define SERIAL_RAM_LOGGER_BUFFER_FULL_ADDR    0x1c37;
+#define SERIAL_RAM_LOGGER_END_POS_ADDR        0x1c38;
+
 #define DB_MEM_DEVICE_LINK_KEY_STORAGE_ADDR 0x1c40;
 
+
 /****************************************************************************/
+
+// Please also increase BUILD version if changes to the ni variables are done
 
 Signature = 0x5B80;
 ResetSource = 0x1C00;
@@ -60,6 +66,10 @@ niRtcHour = 0x1C33;
 niRtcMin = 0x1C34;
 niRtcSec = 0x1C35;
 niLang = 0x1C36;
+
+niSerialRAMLoggerBufferFull = 0x1c37;
+niSerialRAMLoggerEndPos = 0x1c38;
+niSerialRAMLoggerEnabled = 0x1c3A;
 
 niDBMemDeviceLinkKeyStorage = 0x1c40;
 

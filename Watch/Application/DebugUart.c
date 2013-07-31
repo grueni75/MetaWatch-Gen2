@@ -38,6 +38,7 @@
 #include "Utilities.h"
 #include "TermMode.h"
 #include "Wrapper.h"
+#include "SerialRAM.h"
 
 /******************************************************************************/
 extern const char BUILD[];
@@ -88,7 +89,11 @@ unsigned int LastCriticalCode = 0;
 
 #endif
 
+#if LOG_TO_SERIAL_RAM
+#define WRITE_UART(_x) {UCA3TXBUF = _x; LogCharToSerialRAM(UCA3TXBUF); while ((UCA3IFG & UCTXIFG) == 0);}
+#else
 #define WRITE_UART(_x) {UCA3TXBUF = _x; while ((UCA3IFG & UCTXIFG) == 0);}
+#endif
 
 void EnableDebugUart(unsigned char Enable)
 {

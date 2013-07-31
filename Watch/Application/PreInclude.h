@@ -95,6 +95,9 @@
 /*! track which critical code was executed last */
 #define TRACK_CRITICAL_CODE ( 0 )
 
+/*! store the log from the debug uart also in serial SRAM for reading out later */
+#define LOG_TO_SERIAL_RAM ( 1 )
+
 /* Language for DayOfWeek, 0: English; 1: Finnish; 2: German */
 #define CURRENT_LANG  (0)
 

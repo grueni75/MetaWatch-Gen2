@@ -31,6 +31,8 @@
 #include "hal_battery.h"
 #include "hal_lcd.h"
 #include "hal_rtos_timer.h"
+#include "hal_boot.h"
+#include "hal_digital_v2_defs.h"
 #include "Messages.h"
 #include "MessageQueues.h"
 #include "DebugUart.h"
@@ -71,6 +73,8 @@
 #define MODE_BUF_START_ADDR     (0x0E00) // 1152x3 = 3456
 #define MODE_BUFFER_SIZE        (0x1200) // 1152x4
 #define WGT_BUF_START_ADDR      (0x80) //(1024x8-1152x7=128 (0x1B00) // 96x12x(4 + 2) = 6912
+#define LOG_BUF_START_ADDR      ((unsigned int)0x2000)
+#define LOG_BUFFER_SIZE         ((unsigned int)0x6000)
 
 #define WRITE_DATA_LEN          (BYTES_PER_QUAD_LINE + BYTES_PER_QUAD_LINE)
 #define SRAM_DATA_LEN           (SRAM_HEADER_LEN + WRITE_DATA_LEN)
@@ -110,6 +114,25 @@ static unsigned char ReadData = 0x00;
 static unsigned char DmaBusy  = 0;
 
 static signed char CurrentPage = 0;
+
+#if LOG_TO_SERIAL_RAM
+#define SERIAL_RAM_LOGGER_BUFFER_SIZE 32
+static unsigned char SerialRAMLoggerLEDState = 0;
+static unsigned char SerialRAMLoggerBufferPos = 0;
+static unsigned char SerialRAMLoggerWasEnabled;
+static char SerialRAMLoggerBuffer[SERIAL_RAM_LOGGER_BUFFER_SIZE];
+static unsigned char SerialRAMLoggerWriteBuffer[SRAM_HEADER_LEN+MSG_MAX_PAYLOAD_LENGTH+1] = { 0 };
+static unsigned char SerialRAMLoggerReadBuffer[SRAM_HEADER_LEN+MSG_MAX_PAYLOAD_LENGTH+1];
+#if __IAR_SYSTEMS_ICC__
+__no_init __root unsigned int niSerialRAMLoggerEndPos @SERIAL_RAM_LOGGER_END_POS_ADDR;
+__no_init __root unsigned char niSerialRAMLoggerBufferFull @SERIAL_RAM_LOGGER_BUFFER_FULL_ADDR;
+__no_init __root unsigned char niSerialRAMLoggerEnabled @SERIAL_RAM_LOGGER_ENABLED_ADDR;
+#else
+extern unsigned int niSerialRAMLoggerEndPos;
+extern unsigned char niSerialRAMLoggerBufferFull;
+extern unsigned char niSerialRAMLoggerEnabled;
+#endif
+#endif
 
 static xSemaphoreHandle SramMutex;
 
@@ -168,7 +191,7 @@ static const unsigned char ModePriority[] = {NOTIF_MODE, APP_MODE, IDLE_MODE, MU
 /******************************************************************************/
 static void SetAddr(unsigned int Addr);
 static void Write(const unsigned long pData, unsigned int Length, unsigned char Op);
-static void ReadBlock(unsigned char* pWriteData,unsigned char* pReadData);
+static void ReadBlock(unsigned char* pWriteData,unsigned char* pReadData, unsigned int DataLen);
 static void LoadBuffer(unsigned char i, unsigned char const *pTemp);
 
 static void AssignWidgetBuffer(Widget_t *pWidget);
@@ -179,6 +202,12 @@ static void WriteClockWidget(unsigned char *pBuffer);
 static signed char ComparePriority(unsigned char Mode);
 static unsigned char GetWidgetChange(unsigned char CurId, unsigned char CurOpt, unsigned char MsgId, unsigned char MsgOpt);
 static void TestFaceId(WidgetList_t *pWidget);
+
+#if LOG_TO_SERIAL_RAM
+void ReadLogHandler(tMessage* pMsg);
+void LogCharToSerialRAM(char c);
+static void FlushLog();
+#endif
 
 void SetWidgetList(tMessage *pMsg)
 {
@@ -668,7 +697,7 @@ void UpdateDisplayHandler(tMessage* pMsg)
         SramBuf[1] = Addr >> 8;
         SramBuf[2] = Addr;
 
-        ReadBlock(SramBuf, (unsigned char *)&LcdData + BYTES_PER_QUAD_LINE * k);
+        ReadBlock(SramBuf, (unsigned char *)&LcdData + BYTES_PER_QUAD_LINE * k, 0);
 
         unsigned char c; // Column byte number
         
@@ -784,7 +813,7 @@ void UpdateDisplayHandler(tMessage* pMsg)
        * 3+1 spots to starting location of data from dma read
        * (room for bytes read in when cmd and address are sent)
        */
-      ReadBlock(SramBuf, (unsigned char *)&LcdData);
+      ReadBlock(SramBuf, (unsigned char *)&LcdData, 0);
 
       /* now add the row number */
       LcdData.RowNumber = StartRow ++;
@@ -806,13 +835,15 @@ static signed char ComparePriority(unsigned char Mode)
   return -1;
 }
 
-static void ReadBlock(unsigned char *pWriteData, unsigned char *pReadData)
+static void ReadBlock(unsigned char *pWriteData, unsigned char *pReadData, unsigned int DataLen)
 {
   DmaBusy = 1;
   SRAM_CSN_ASSERT();
 
-  unsigned char DataLen = (*pWriteData == MSG_OPT_NEWUI) ?
-      SRAM_HEADER_LEN + BYTES_PER_QUAD_LINE + 1 : SRAM_HEADER_LEN + BYTES_PER_LINE + 1;
+  if (DataLen==0) {
+    DataLen = (*pWriteData == MSG_OPT_NEWUI) ?
+        SRAM_HEADER_LEN + BYTES_PER_QUAD_LINE + 1 : SRAM_HEADER_LEN + BYTES_PER_LINE + 1;
+  }
   *pWriteData = SPI_READ;
 
   /*
@@ -942,9 +973,129 @@ static void LoadBuffer(unsigned char i, unsigned char const *pTemp)
   Write((unsigned long)pTemp, BYTES_PER_QUAD, DMA_COPY);
 }
 
-/* configure the MSP430 SPI peripheral */
-void SerialRamInit(void)
+#if LOG_TO_SERIAL_RAM
+
+/* Writes the log to the serial RAM */
+static void FlushLog()
 {
+  Write((unsigned long)SerialRAMLoggerBuffer, SerialRAMLoggerBufferPos, DMA_COPY);
+  niSerialRAMLoggerEndPos=niSerialRAMLoggerEndPos+SerialRAMLoggerBufferPos-SRAM_HEADER_LEN;
+  if (niSerialRAMLoggerEndPos>=LOG_BUF_START_ADDR+LOG_BUFFER_SIZE) {
+    niSerialRAMLoggerEndPos=LOG_BUF_START_ADDR;
+    niSerialRAMLoggerBufferFull=1;
+  }
+  SerialRAMLoggerBuffer[1]=niSerialRAMLoggerEndPos >> 8;
+  SerialRAMLoggerBuffer[2]=niSerialRAMLoggerEndPos;
+  SerialRAMLoggerBufferPos=SRAM_HEADER_LEN;
+}
+
+/* Writes a character to the log in the serial RAM */
+void LogCharToSerialRAM(char c)
+{
+  if (!niSerialRAMLoggerEnabled) return;
+  SerialRAMLoggerBuffer[SerialRAMLoggerBufferPos]=c;
+  SerialRAMLoggerBufferPos++;
+  if ((c=='\n')||
+  (SerialRAMLoggerBufferPos==SERIAL_RAM_LOGGER_BUFFER_SIZE)||
+  (niSerialRAMLoggerEndPos+SerialRAMLoggerBufferPos-SRAM_HEADER_LEN>=LOG_BUF_START_ADDR+LOG_BUFFER_SIZE))
+    FlushLog();
+}
+
+/* Handles read log messages */
+void ReadLogHandler(tMessage* pMsg)
+{
+  tMessage OutgoingMsg;
+  unsigned int pos;
+  unsigned int len;
+
+  DISABLE_LCD_LED();
+
+  // Handle options
+  switch(pMsg->Options) {
+    case MSG_OPT_DISABLE_LOGGING:
+      SerialRAMLoggerWasEnabled=niSerialRAMLoggerEnabled;
+      niSerialRAMLoggerEnabled=0;
+      break;
+    case MSG_OPT_ENABLE_LOGGING:
+      niSerialRAMLoggerEnabled=1;
+      break;
+    case MSG_OPT_RESTORE_LOGGING:
+      niSerialRAMLoggerEnabled=SerialRAMLoggerWasEnabled;
+      SerialRAMLoggerLEDState=0;
+      break;
+  }
+
+  // Stop here if no pos is contained
+  if (!pMsg->pBuffer) return;
+
+  // Toggle the LED
+  if (SerialRAMLoggerLEDState) {
+    DISABLE_LCD_LED();
+  } else {
+    ENABLE_LCD_LED();
+  }
+  SerialRAMLoggerLEDState=1-SerialRAMLoggerLEDState;
+
+  // Get the start position to read
+  pos = *((unsigned int *)&pMsg->pBuffer[0]);
+  len=MSG_MAX_PAYLOAD_LENGTH;
+  if (niSerialRAMLoggerBufferFull) {
+    if (pos+len>LOG_BUFFER_SIZE)
+      len=LOG_BUFFER_SIZE-pos;
+    pos+=niSerialRAMLoggerEndPos;
+    if (pos>=LOG_BUF_START_ADDR+LOG_BUFFER_SIZE)
+      pos-=LOG_BUFFER_SIZE;
+    if (pos+len>LOG_BUF_START_ADDR+LOG_BUFFER_SIZE)
+      len=LOG_BUF_START_ADDR+LOG_BUFFER_SIZE-pos;
+  } else {
+    pos+=LOG_BUF_START_ADDR;
+    if (pos+len>niSerialRAMLoggerEndPos)
+      len=niSerialRAMLoggerEndPos-pos;
+  }
+
+  // Prepare the message
+  if (len==0)
+    SetupMessage(&OutgoingMsg, ReadLogRespMsg, len);
+  else {
+    SetupMessageWithBuffer(&OutgoingMsg, ReadLogRespMsg, len);
+
+    // Read the memory
+    SerialRAMLoggerWriteBuffer[1]=pos >> 8;
+    SerialRAMLoggerWriteBuffer[2]=pos;
+    ReadBlock(SerialRAMLoggerWriteBuffer, SerialRAMLoggerReadBuffer, SRAM_HEADER_LEN+len+1);
+    memcpy(OutgoingMsg.pBuffer,&SerialRAMLoggerReadBuffer[SRAM_HEADER_LEN+1],len);
+    OutgoingMsg.Length=len;
+  }
+
+  // Send the message
+  RouteMsg(&OutgoingMsg);
+}
+
+#endif
+
+// Reset code
+extern unsigned int niReset;
+
+/* configure the MSP430 SPI peripheral */
+void SerialRamPreInit(void)
+{
+#if LOG_TO_SERIAL_RAM
+  /* Init the serial RAM logger positions if required */
+  if (GetBoardConfiguration()>=DIGITAL_WATCH_TYPE_G1) {
+    CheckResetCode();
+    if (niReset != NORMAL_RESET_CODE)
+    {
+      niSerialRAMLoggerEndPos=LOG_BUF_START_ADDR;
+      niSerialRAMLoggerBufferFull=0;
+      niSerialRAMLoggerEnabled=0;
+    }
+    SerialRAMLoggerBuffer[0]=SPI_WRITE;
+    SerialRAMLoggerBuffer[1]=niSerialRAMLoggerEndPos >> 8;
+    SerialRAMLoggerBuffer[2]=niSerialRAMLoggerEndPos;
+    SerialRAMLoggerBufferPos=3;
+  }
+#endif
+
   /* assert reset when configuring */
   UCA0CTL1 = UCSWRST;
 
@@ -1021,6 +1172,14 @@ void SerialRamInit(void)
   if (ReadData != FinalSrValue) PrintS("# SRAM Init2");
   SRAM_CSN_DEASSERT();
 
+  SramMutex = xSemaphoreCreateMutex();
+  xSemaphoreGive(SramMutex);
+  DisableSmClkUser(SERIAL_RAM_USER);
+}
+
+/* configure the MSP430 SPI peripheral */
+void SerialRamInit(void)
+{
   /* now use the DMA to clear the serial ram */
   SetAddr(MODE_BUF_START_ADDR);
   Write((unsigned long)&DummyData, MODE_BUFFER_SIZE, DMA_FILL);
@@ -1031,10 +1190,6 @@ void SerialRamInit(void)
 
   // load 16 buffers with empty widget template
   for (i = 0; i < MAX_WIDGET_NUM; ++i) LoadBuffer(i, pWidgetTemplate[TMPL_WGT_EMPTY]);
-  
-  SramMutex = xSemaphoreCreateMutex();
-  xSemaphoreGive(SramMutex);
-  DisableSmClkUser(SERIAL_RAM_USER);
 }
 
 /* Serial RAM controller uses two dma channels

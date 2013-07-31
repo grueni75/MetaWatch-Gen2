@@ -162,6 +162,10 @@ typedef enum
   GetRtcMsg = 0x27,
   RtcRespMsg = 0x28,
 
+  /* debug log */
+  ReadLogMsg = 0x29,
+  ReadLogRespMsg = 0x2A,
+
   /* osal nv */
   NvalOperationMsg = 0x30,
   PropRespMsg = 0x31,
@@ -270,7 +274,8 @@ typedef enum
   
   EnableAdvMsg = 0xf1,
   SetAdvDataMsg = 0xf2,
-  SetScanRespMsg = 0xf3
+  SetScanRespMsg = 0xf3,
+
 } eMessageType;
 
 #define MAXIMUM_MESSAGE_TYPES      (256)
@@ -297,6 +302,11 @@ typedef enum
 #define MSG_OPT_UPD_GRID_BIT      (0x40)
 #define MSG_OPT_UPD_INTERNAL      (0x10)
 #define SET_PAGE_SHFT             (2)
+
+/* options for ReadLogRespMsg */
+#define MSG_OPT_DISABLE_LOGGING   (0x10)
+#define MSG_OPT_ENABLE_LOGGING    (0x20)
+#define MSG_OPT_RESTORE_LOGGING   (0x30)
 
 /* options */
 #define NUMBER_OF_BUFFERS          ( 2 )

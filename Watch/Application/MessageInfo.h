@@ -74,8 +74,8 @@ static const tMsgInfo MsgInfo[MAXIMUM_MESSAGE_TYPES] =
   {"SetRtcMsg",                   DISPLAY_QINDEX,    0 }, /* 0x26 */
   {"GetRtcMsg",                   DISPLAY_QINDEX,    0 }, /* 0x27 */
   {"GetRtcResp",                  WRAPPER_QINDEX,    1 }, /* 0x28 */
-  {UnusedMsg,                     FREE_QINDEX,       0 }, /* 0x29 */
-  {UnusedMsg,                     FREE_QINDEX,       0 }, /* 0x2a */
+  {"ReadLogMsg",                  DISPLAY_QINDEX,    0 }, /* 0x29 */
+  {"ReadLogResp",                 WRAPPER_QINDEX,    0 }, /* 0x2a */
   {UnusedMsg,                     FREE_QINDEX,       0 }, /* 0x2b */
   {UnusedMsg,                     FREE_QINDEX,       0 }, /* 0x2c */
   {UnusedMsg,                     FREE_QINDEX,       0 }, /* 0x2d */
@@ -287,8 +287,8 @@ static const tMsgInfo MsgInfo[MAXIMUM_MESSAGE_TYPES] =
   {UnusedMsg,                     FREE_QINDEX,       0 }, /* 0xfb */
   {UnusedMsg,                     FREE_QINDEX,       0 }, /* 0xfc */
   {UnusedMsg,                     FREE_QINDEX,       0 }, /* 0xfd */
-  {UnusedMsg,                     FREE_QINDEX,       0 }, /* 0xfe */
-  {UnusedMsg,                     FREE_QINDEX,       0 }, /* 0xff */
+  {UnusedMsg,                     DISPLAY_QINDEX,    0 }, /* 0xfe */
+  {UnusedMsg,                     WRAPPER_QINDEX,    0 }, /* 0xff */
 };
 
 #endif /* MESSAGE_INFORMATION_H */

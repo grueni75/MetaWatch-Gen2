@@ -65,12 +65,18 @@ typedef struct
 
 extern const Layout_t Layout[];
 
+// Controls if logging to serial RAM is enabled
+extern unsigned char SerialRAMLoggerEnabled;
+
 unsigned char CurrentIdleScreen(void);
 
 void UpdateClockWidgets(void);
 
-/*! This sets up the peripheral in the MSP430, the external serial ram,
- * and clears the serial RAM memory to zero.
+/*! This sets up the peripheral in the MSP430, the external serial ram.
+ */
+void SerialRamPreInit(void);
+
+/*! This clears the serial RAM memory to zero.
  */
 void SerialRamInit(void);
 
@@ -84,5 +90,15 @@ void LoadTemplateHandler(tMessage *pMsg);
 void WriteBufferHandler(tMessage *pMsg);
 
 void SetWidgetList(tMessage *pMsg);
+
+#if LOG_TO_SERIAL_RAM
+
+/*! Writes a character to the log in the serial RAM */
+void LogCharToSerialRAM(char c);
+
+/*! Handles read log messages */
+void ReadLogHandler(tMessage* pMsg);
+
+#endif
 
 #endif /* SERIAL_RAM_H */
