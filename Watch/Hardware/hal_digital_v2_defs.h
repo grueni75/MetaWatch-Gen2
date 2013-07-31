@@ -425,6 +425,7 @@
 #define ACCELEROMETER_SCL_PREN ( P5REN )
 
 #define ACCELEROMETER_INT_PIN  ( BIT7 )
+#define ACCELEROMETER_INT_PIN_NR  ( 7 )
 #define ACCELEROMETER_INT_PDIR ( P1DIR )
 #define ACCELEROMETER_INT_PSEL ( P1SEL )
 #define ACCELEROMETER_INT_PIFG ( P1IFG )
@@ -522,6 +523,7 @@
 #define BT_CTRL_IE    ( P1IE )
 #define BT_CTRL_IV    ( P1IV )
 #define BT_CTS_PIN    ( BIT3 )
+#define BT_CTS_PIN_NR ( 3 )
 #define BT_RTS_PIN    ( BIT0 )
 
 #define BT_COMM_PDIR  ( P5DIR )

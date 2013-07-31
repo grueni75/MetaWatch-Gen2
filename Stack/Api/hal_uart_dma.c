@@ -351,13 +351,21 @@ void usbRxTxISR(void){
 
 extern void ehcill_handle(uint8_t action);
 #define EHCILL_CTS_SIGNAL      0x034
+extern void AccelerometerPinIsr(void);
 
 #pragma vector=BT_CTRL_VECTOR
 __interrupt
 void ctsISR(void){ 
   LAST_CRITICAL_CODE(CC_CTS_ISR);
   CODE_START(btctrlISR);
-  BT_CTRL_IV = 0;
-  (*cts_irq_handler)();
+  switch (BT_CTRL_IV) {
+    case (BT_CTS_PIN_NR+1)<<1:
+      (*cts_irq_handler)();
+      break;
+    case (ACCELEROMETER_INT_PIN_NR+1)<<1:
+      AccelerometerPinIsr();
+      break;
+  }
+  //BT_CTRL_IV = 0;
   CODE_END(btctrlISR);
 }
