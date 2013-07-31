@@ -37,7 +37,8 @@ void EnterLpm3(void)
      * we are already in critical section so that we do not get switched out by the
      * OS in the middle of stopping the OS Scheduler.
      */
-    DisableRtosTick();
+    if (!xTaskTickRequired())
+      DisableRtosTick();
     
     /* errata PMM11 + PMM12 divide MCLK by two before going to sleep */
     if (Errata()) MCLK_DIV(2);
