@@ -130,14 +130,23 @@ void BluetoothPower(unsigned char power) {
     ClearResetCode();
     StackInitialized=1;
   }
-  if (power) {
-    hci_power_control(HCI_POWER_ON);
-    SetDiscoverability(1);
-  } else {
-    SetDiscoverability(0);
-    hci_power_control(HCI_POWER_OFF);
+  switch(BluetoothStateInt) {
+    case Unknown:
+    case Off:
+      if (power) {
+        hci_power_control(HCI_POWER_ON);
+        SetDiscoverability(1);
+        BluetoothStateChanged(Initializing);
+      }
+      break;
+    case On:
+    case Connect:
+      if (!power) {
+        SetDiscoverability(0);
+        hci_power_control(HCI_POWER_OFF);
+        BluetoothStateChanged(Initializing);
+      }
   }
-  BluetoothStateChanged(Initializing);
 }
 
 /*! Handle the messages routed to the SPP task */
