@@ -431,7 +431,7 @@ static void packet_handler(void * connection, uint8_t packet_type, uint16_t chan
             for (pos=OFFSET_OF_DATA_IN_COMMAND_COMPLETE+5;pos>=OFFSET_OF_DATA_IN_COMMAND_COMPLETE+1;pos-=2) {
               t=READ_BT_16(packet,pos);
               if (BDAddr[0]==0)
-                snprintf(BDAddr,15,"  %04x",t);
+                snprintf(BDAddr,15,"0x%04x",t);
               else
                 snprintf(BDAddr,15,"%s%04x",BDAddr,t);
             }
