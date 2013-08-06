@@ -225,6 +225,8 @@ static void try_to_send(void) {
     if (tx_power_off_after_delivery) {
       SetupMessage(&OutgoingMsg, TurnRadioOffMsg, MSG_OPT_NONE);
       RouteMsg(&OutgoingMsg);
+      SetupMessage(&OutgoingMsg, LinkAlarmMsg, MSG_OPT_NONE);
+      RouteMsg(&OutgoingMsg);
       tx_power_off_after_delivery=0;
     }
     return;
