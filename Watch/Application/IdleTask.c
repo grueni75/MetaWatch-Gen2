@@ -43,6 +43,8 @@ extern unsigned int niWdtCounter;
 #endif
 
 extern unsigned int niReset;
+extern unsigned char niWrapperCurrentMsgType;
+extern unsigned char niDisplayCurrentMsgType;
 
 static void PrintResetSource(unsigned int Source);
 
@@ -137,7 +139,11 @@ void UpdateWatchdogInfo(void)
 
 void ShowWatchdogInfo(void)
 {
-  if (niReset == FLASH_RESET_CODE) niWdtCounter = 0;
+  if (niReset == FLASH_RESET_CODE) {
+    niWdtCounter = 0;
+    niWrapperCurrentMsgType = 0;
+    niDisplayCurrentMsgType = 0;
+  }
 
   unsigned int ResetSource = GetResetSource();
   PrintResetSource(ResetSource);
@@ -152,6 +158,13 @@ void ShowWatchdogInfo(void)
   }
   
   PrintF("Total Watchdogs: %d", niWdtCounter);
+
+  if (niWrapperCurrentMsgType!=0)
+    PrintF("Wrapper processed message type 0x%02x",niWrapperCurrentMsgType);
+  if (niDisplayCurrentMsgType!=0)
+    PrintF("Display processed message type 0x%02x",niDisplayCurrentMsgType);
+  niWrapperCurrentMsgType = 0;
+  niDisplayCurrentMsgType = 0;
 }
 
 void ResetWatchdog(void)

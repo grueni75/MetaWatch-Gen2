@@ -85,6 +85,12 @@ static unsigned char Splashing = pdTRUE;
 static unsigned char LedOn = 0;
 static unsigned char LinkAlarmEnable = pdTRUE; // temporary
 
+#if __IAR_SYSTEMS_ICC__
+__no_init __root unsigned char niDisplayCurrentMsgType @DISPLAY_CURRENT_MSG_TYPE_ADDR;
+#else
+extern unsigned char niDisplayCurrentMsgType;
+#endif
+
 /******************************************************************************/
 static void DisplayTask(void *pvParameters);
 static void DisplayQueueMessageHandler(tMessage* pMsg);
@@ -147,11 +153,13 @@ static void DisplayTask(void *pvParameters)
   {
     if (xQueueReceive(QueueHandles[DISPLAY_QINDEX], &Msg, portMAX_DELAY))
     {
+      niDisplayCurrentMsgType=Msg.Type;
       PrintMessageType(&Msg);
       DisplayQueueMessageHandler(&Msg);
       SendToFreeQueue(&Msg);
       CheckStackUsage(DisplayHandle, "~DspStk ");
       CheckQueueUsage(QueueHandles[DISPLAY_QINDEX]);
+      niDisplayCurrentMsgType=0;
     }
   }
 }

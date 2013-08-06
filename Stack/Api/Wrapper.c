@@ -97,6 +97,12 @@ static uint8_t Discoverable=0;
 static uint8_t OnceConnectedInt=0;
 static uint8_t StackInitialized=0;
 
+#if __IAR_SYSTEMS_ICC__
+__no_init __root unsigned char niWrapperCurrentMsgType @WRAPPER_CURRENT_MSG_TYPE_ADDR;
+#else
+extern unsigned char niWrapperCurrentMsgType;
+#endif
+
 uint8_t ReadyToSleep=1;
 char BDAddr[15] = { 0 };
 
@@ -254,11 +260,13 @@ static void SPPTask(void *pvParameters)
     // Check for messages
     if (xQueueReceive(QueueHandles[WRAPPER_QINDEX], &SPPMsg, portMAX_DELAY))
     {
+      niWrapperCurrentMsgType=SPPMsg.Type;
       PrintMessageType(&SPPMsg);
       if (SPPMessageHandler(&SPPMsg))
         SendToFreeQueue(&SPPMsg);
       CheckStackUsage(xSPPTaskHandle,"SPP Task");
       CheckQueueUsage(QueueHandles[WRAPPER_QINDEX]);
+      niWrapperCurrentMsgType=0;
     }
   }
 }

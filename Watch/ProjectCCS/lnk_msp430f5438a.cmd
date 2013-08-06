@@ -39,9 +39,12 @@
 
 #define SERIAL_RAM_LOGGER_BUFFER_FULL_ADDR    0x1c37;
 #define SERIAL_RAM_LOGGER_END_POS_ADDR        0x1c38;
+#define SERIAL_RAM_LOGGER_ENABLED             0x1c3a;
 
-#define DB_MEM_DEVICE_LINK_KEY_STORAGE_ADDR 0x1c40;
+#define WRAPPER_CURRENT_MSG_TYPE_ADDR         0x1c3b;
+#define DISPLAY_CURRENT_MSG_TYPE_ADDR         0x1c3c;
 
+#define DB_MEM_DEVICE_LINK_KEY_STORAGE_ADDR   0x1c40;
 
 /****************************************************************************/
 
@@ -69,7 +72,10 @@ niLang = 0x1C36;
 
 niSerialRAMLoggerBufferFull = 0x1c37;
 niSerialRAMLoggerEndPos = 0x1c38;
-niSerialRAMLoggerEnabled = 0x1c3A;
+niSerialRAMLoggerEnabled = 0x1c3a;
+
+niWrapperCurrentMsgType = 0x1c3b;
+niDisplayCurrentMsgType = 0x1c3c;
 
 niDBMemDeviceLinkKeyStorage = 0x1c40;
 
