@@ -1,5 +1,5 @@
 /** 
- * @file  hal_bt.c
+ * @file  hal_uart_dma.c
  ***************************************************************************/
 #include <stdint.h>
 
@@ -32,8 +32,10 @@
 void dummy_handler(void){};
 
 // rx state
-static uint16_t  bytes_to_read = 0;
-static uint8_t * rx_buffer_ptr = 0;
+static uint16_t   bytes_to_read = 0;
+static uint8_t *  rx_buffer_ptr = 0;
+unsigned char     rx_errors = 0;
+static uint8_t    rx_flow_disabled = 0;
 
 // tx state
 static uint16_t  bytes_to_write = 0;
@@ -57,13 +59,33 @@ static uint8_t sent_data_errors=0;
 
 static inline void hal_uart_dma_enable_rx(void){
   //P1OUT &= ~BIT4;  // = 0 - RTS low -> ok
-  BT_CTRL_POUT &= ~BT_RTS_PIN;
+  if (!rx_flow_disabled) BT_CTRL_POUT &= ~BT_RTS_PIN;
 }
 
 static inline void hal_uart_dma_disable_rx(void){
   //P1OUT |= BIT4;  // = 1 - RTS high -> stop
   BT_CTRL_POUT |= BT_RTS_PIN;
 }
+
+/**
+ * @brief  Stops the flow of characters from the bluetooth UART
+ *
+ * @param  disable: disable (1) or enable (0) the flow control
+ *
+ * @return none
+ */
+void hal_uart_disable_rx_flow(unsigned char disable)
+{
+  rx_flow_disabled = disable;
+  if (disable)
+    hal_uart_dma_disable_rx();
+  else {
+    if (BT_UART_IE & UCRXIE) {
+      hal_uart_dma_enable_rx();
+    }
+  }
+}
+
 
 /**
  * @brief  Deinits the serial communications peripheral and GPIO ports
@@ -273,8 +295,6 @@ void hal_uart_dma_set_sleep(uint8_t sleep){
   ReadyToSleep=sleep;
 }
 
-uint8_t rx_errors = 0;
-
 // block-wise "DMA" RX/TX UART driver
 #pragma vector=BT_UART_VECTOR
 __interrupt
@@ -287,8 +307,7 @@ void usbRxTxISR(void){
 
     case 2: // RXIFG
         if (BT_UART_STAT & UCRXERR) {
-          PrintS("BTSERR: lost received byte");
-          btstack_error_handler();
+          rx_errors++;
         }
         if (bytes_to_read == 0) {
           hal_uart_dma_disable_rx();

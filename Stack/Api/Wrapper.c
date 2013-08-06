@@ -60,6 +60,7 @@
 #include "hal_miscellaneous.h"
 #include "hal_calibration.h"
 #include "hal_boot.h"
+#include "hal_uart_dma.h"
 
 #include "DebugUart.h"
 #include "Utilities.h"
@@ -397,5 +398,5 @@ void GetBDAddrStr(char *pAddr)
  * pin. */
 void EnableFlowControl(unsigned char Enable)
 {
-  // not yet supported (but also currently not used)
+  hal_uart_disable_rx_flow(1-Enable);
 }
