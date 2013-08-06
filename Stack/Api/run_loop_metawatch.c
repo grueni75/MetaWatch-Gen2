@@ -61,6 +61,7 @@
 #include "MessageQueues.h"
 #include "BufferPool.h"
 #include "hal_rtos_timer.h"
+#include "hal_uart_dma.h"
 
 #include <btstack/run_loop.h>
 #include <btstack/linked_list.h>
@@ -141,6 +142,12 @@ void embedded_run_loop_dump_timer(void){
 void embedded_run_loop_execute(void) {
   data_source_t *ds;
 
+  // Check error conditions
+  if (rx_errors>0) {
+    PrintS("BTSERR: UART lost rx bytes");
+    btstack_error_handler();
+  }
+
   // process data sources
   data_source_t *next;
   for (ds = (data_source_t *) data_sources; ds != NULL ; ds = next){
@@ -184,7 +191,7 @@ uint32_t embedded_ticks_for_ms(uint32_t time_in_ms){
   return time_in_ms / 250;
 }
 
-// set timer
+// set timer (should be part of run_loop_t, but for some reason it is not)
 void run_loop_set_timer(timer_source_t *ts, uint32_t timeout_in_ms){
   uint32_t ticks = embedded_ticks_for_ms(timeout_in_ms);
   if (ticks == 0) ticks++;
