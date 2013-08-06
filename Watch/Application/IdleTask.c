@@ -252,9 +252,18 @@ void TaskCheckIn(etTaskCheckInId TaskId)
 {
   static unsigned char TaskCheckInFlags = 0;
 
+  switch(TaskId) {
+    case eWrapperTaskCheckInId:
+      PrintS("** Check in: Wrapper **");
+      break;
+    case eDisplayTaskCheckInId:
+      PrintS("** Check in: Display **");
+      break;
+  }
+
   portENTER_CRITICAL();
   LAST_CRITICAL_CODE(CC_TASK_CHECKIN);
-  
+
   TaskCheckInFlags |= (1 << TaskId);
 
   if (TaskCheckInFlags == ALL_TASKS_HAVE_CHECKED_IN)

@@ -61,6 +61,7 @@
 #include "hal_miscellaneous.h"
 #include "hal_calibration.h"
 #include "hal_boot.h"
+#include "hal_uart_dma.h"
 
 #include "DebugUart.h"
 #include "Wrapper.h"
@@ -112,9 +113,6 @@ extern char BDAddr[];
 void SetDiscoverability(unsigned char Value);
 void BluetoothStateChanged(eBluetoothState BS);
 
-// Functions used from hal_uart_dma.c
-void hal_uart_dma_deinit(void);
-
 // Flag to enable packet dumps
 int btstack_enable_dump_mode=0;
 
@@ -152,8 +150,8 @@ static uint8_t tx_queue_empty() {
 
 // Activates a new timer
 static void run_loop_register_timer(timer_source_t *timer, uint16_t period) {
-  run_loop_set_timer(timer, period);
   run_loop_remove_timer(timer);
+  run_loop_set_timer(timer, period);
   run_loop_add_timer(timer);
 }
 
@@ -176,6 +174,7 @@ static void transit_to_active_mode()
   }
   // In active mode, ensure that return to sniff timeout is updated
   if (rfcomm_connection_mode == ACTIVE) {
+    //PrintS("BTS: arming sniff return timer");
     run_loop_register_timer(&sniff_timer, sniff_return_timeout);
   }
 }
@@ -183,8 +182,10 @@ static void transit_to_active_mode()
 // Sets sniff mode
 static void transit_to_sniff_mode(struct timer *t)
 {
+  //PrintS("BTS: transit_to_sniff_mode called");
   if ((state!=W4_ACTIVE)||(!sniff_enabled)) return;
   if (rfcomm_connection_mode == ACTIVE) {
+    //PrintS("BTS: requesting sniff mode and arming next timer");
     if (hci_can_send_packet_now(HCI_COMMAND_DATA_PACKET)) {
       //PrintS("BTS: entering sniff mode");
       hci_send_cmd(&hci_sniff_mode,rfcomm_connection_handle,sniff_max_interval,sniff_min_interval,sniff_attempt,sniff_timeout);
@@ -518,10 +519,12 @@ static void packet_handler(void * connection, uint8_t packet_type, uint16_t chan
               case 0:
                 // Ensure that sniff mode is re-activated after timeout
                 rfcomm_connection_mode = ACTIVE;
+                PrintS("BTS: connection in ACTIVE mode");
                 run_loop_register_timer(&sniff_timer,sniff_return_timeout);
                 break;
               case 2:
                 rfcomm_connection_mode = SNIFF;
+                PrintS("BTS: connection in SNIFF mode");
                 break;
               default:
                 PrintS("BTSERR: Unsupported connection mode!");
