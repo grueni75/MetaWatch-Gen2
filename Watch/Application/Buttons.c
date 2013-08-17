@@ -478,7 +478,8 @@ static void HandleButtonEvent(unsigned char Index, unsigned char Event)
       Msg.pBuffer[2] = Event;
       Msg.pBuffer[3] = pAction[i].MsgType;
       Msg.pBuffer[4] = pAction[i].MsgOpt;
-      PrintF("Contents: ButtonIndex=%d ButtonMode=%d Event=%d MsgType=%d MsgOpt=%d",Msg.pBuffer[0],Msg.pBuffer[1],Msg.pBuffer[2],Msg.pBuffer[3],Msg.pBuffer[4]);
+      PrintF("ButtonIndex=%d ButtonMode=%d Event=%d",Msg.pBuffer[0],Msg.pBuffer[1],Msg.pBuffer[2]);
+      PrintF("MsgType=%d MsgOpt=%d",Msg.pBuffer[3],Msg.pBuffer[4]);
       Msg.Length = 5;
       RouteMsg(&Msg);
     }
