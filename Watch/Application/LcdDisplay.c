@@ -210,6 +210,7 @@ void Init(void)
   if (GetBoardConfiguration()>=DIGITAL_WATCH_TYPE_G1)
     EnableDebugUart(1);
 #endif
+  __enable_interrupt();
 
   PrintF("*** %s:%s ***", niReset == FLASH_RESET_CODE ? "FLASH" :
     (niReset == MASTER_RESET_CODE ? "MASTER" : "NORMAL"), niBuild);
