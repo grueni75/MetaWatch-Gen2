@@ -191,6 +191,7 @@ void Init(void)
 
   InitBattery();
   CheckClip();
+  __enable_interrupt();
 
   PrintF("*** %s:%s ***", niReset == FLASH_RESET_CODE ? "FLASH" :
     (niReset == MASTER_RESET_CODE ? "MASTER" : "NORMAL"), niBuild);
