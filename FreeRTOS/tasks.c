@@ -232,6 +232,7 @@ register tskTCB *pxTCB;																								\
 			vListRemove( &( pxTCB->xEventListItem ) );																\
 		}																											\
 		prvAddTaskToReadyQueue( pxTCB );																			\
+		vAssertTopUsedPriority(); \
 	}																												\
 }
 /*-----------------------------------------------------------*/
@@ -933,6 +934,7 @@ tskTCB * pxNewTCB;
 					lists even if the scheduler is suspended. */
 					vListRemove(  &( pxTCB->xGenericListItem ) );
 					prvAddTaskToReadyQueue( pxTCB );
+					vAssertTopUsedPriority();
 
 					/* We may have just resumed a higher priority task. */
 					if( pxTCB->uxPriority >= pxCurrentTCB->uxPriority )
@@ -969,6 +971,7 @@ tskTCB * pxNewTCB;
 				xYieldRequired = ( pxTCB->uxPriority >= pxCurrentTCB->uxPriority );
 				vListRemove(  &( pxTCB->xGenericListItem ) );
 				prvAddTaskToReadyQueue( pxTCB );
+				vAssertTopUsedPriority();
 			}
 			else
 			{
@@ -1120,7 +1123,9 @@ signed portBASE_TYPE xAlreadyYielded = pdFALSE;
 					#endif
 				}
 
-				if( ( xYieldRequired == pdTRUE ) || ( xMissedYield == pdTRUE ) )
+        vAssertTopUsedPriority();
+
+        if( ( xYieldRequired == pdTRUE ) || ( xMissedYield == pdTRUE ) )
 				{
 					xAlreadyYielded = pdTRUE;
 					xMissedYield = pdFALSE;
@@ -1697,6 +1702,8 @@ portTickType xTimeToWake;
 }
 /*-----------------------------------------------------------*/
 
+portBASE_TYPE xTaskRemoveFromEventListErrors = 0;
+
 signed portBASE_TYPE xTaskRemoveFromEventList( const xList * const pxEventList )
 {
 tskTCB *pxUnblockedTCB;
@@ -1717,6 +1724,8 @@ portBASE_TYPE xReturn;
 
 	if( uxSchedulerSuspended == ( unsigned portBASE_TYPE ) pdFALSE )
 	{
+	  if (__get_interrupt_state() & GIE)
+	    xTaskRemoveFromEventListErrors++;
 		vListRemove( &( pxUnblockedTCB->xGenericListItem ) );
 		prvAddTaskToReadyQueue( pxUnblockedTCB );
 	}
@@ -1739,6 +1748,8 @@ portBASE_TYPE xReturn;
 	{
 		xReturn = pdFALSE;
 	}
+
+  vAssertTopUsedPriority();
 
 	return xReturn;
 }
@@ -2283,6 +2294,7 @@ tskTCB *pxNewTCB;
 				pxTCB->uxPriority = pxCurrentTCB->uxPriority;
 			}
 		}
+    vAssertTopUsedPriority();
 	}
 
 #endif
@@ -2309,6 +2321,7 @@ tskTCB *pxNewTCB;
 				prvAddTaskToReadyQueue( pxTCB );
 			}
 		}
+    vAssertTopUsedPriority();
 	}
 
 #endif
@@ -2361,4 +2374,19 @@ signed portBASE_TYPE xTaskTickRequired( void )
 
 /*-----------------------------------------------------------*/
 
+portBASE_TYPE uxTopReadyPriorityErrors=0;
+
+void vAssertTopUsedPriority( void )
+{
+  portBASE_TYPE i;
+  for (i=0;i<configMAX_PRIORITIES;i++) {
+    if (!listLIST_IS_EMPTY( &( pxReadyTasksLists[i] ))) {
+      if (uxTopReadyPriority<i) {
+        uxTopReadyPriorityErrors++;
+      }
+    }
+  }
+}
+
+/*-----------------------------------------------------------*/
 

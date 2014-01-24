@@ -1276,6 +1276,8 @@ signed portBASE_TYPE xTaskGenericCreate( pdTASK_CODE pvTaskCode, const signed ch
 */
 signed portBASE_TYPE xTaskTickRequired( void ) PRIVILEGED_FUNCTION;
 
+void vAssertTopUsedPriority( void ) PRIVILEGED_FUNCTION;
+
 #ifdef __cplusplus
 }
 #endif
