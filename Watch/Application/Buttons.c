@@ -41,9 +41,9 @@
 // asserted for a button to be moved to the state
 #define BTN_ON_COUNT          (2)
 #define BTN_ONE_SEC_COUNT     (32)
-#define BTN_HOLD_COUNT        (3 * BTN_ONE_SEC_COUNT)
-#define BTN_LONG_HOLD_COUNT   (5 * BTN_ONE_SEC_COUNT)
-#define BTN_LONGER_HOLD_COUNT (10 * BTN_ONE_SEC_COUNT)
+#define BTN_HOLD_COUNT        (2 * BTN_ONE_SEC_COUNT)
+//#define BTN_LONG_HOLD_COUNT   (5 * BTN_ONE_SEC_COUNT)
+//#define BTN_LONGER_HOLD_COUNT (10 * BTN_ONE_SEC_COUNT)
 
 /* Immediate state is when a button is pressed but is not released */
 #define BUTTON_STATE_IMMEDIATE ( 0 )
@@ -274,6 +274,7 @@ static void ButtonStateMachine(unsigned char ButtonOn, unsigned char Index)
       {
         PrintS("btn HOLD");
         ChangeButtonState(Index, BUTTON_STATE_HOLD);
+        ButtonData[Index].BtnHoldCounter=0; // repeat event in case user continues to hold
       }
     }
   }
